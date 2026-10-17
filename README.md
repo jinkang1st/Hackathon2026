@@ -1,6 +1,8 @@
 # Hackathon2026
 # AI 防火墙
 
+**Shopping Guard prototype:** [Install and test the Chrome extension](extension/README.md). All extension screens are in English. API configuration starts blank; local GBP price detection works immediately.
+
 在冲动变成行动之前，替你按一下暂停键。
 
 一个探索中的 AI 插件：结合当前操作和用户设定的个人规则，在可能让你后悔的操作发生前，提醒、暂停，并提供替代选择。

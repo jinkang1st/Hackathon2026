@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pause · Shopping Guard</title><link rel="stylesheet" href="../ui.css"><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header><div class="brand"><span class="mark" aria-hidden="true">Ⅱ</span> PAUSE</div><button id="options" class="settings-link" aria-label="Open settings">Settings ↗</button></header>
+  <main>
+    <div class="eyebrow">YOUR MINDFUL SHOPPING COMPANION</div><h1>A little space.<br>A better choice.</h1><p class="subtitle">A mindful moment before your next purchase.</p>
+    <section class="protection"><div><strong>Shopping protection</strong><p id="protection-label">Loading settings…</p></div><label class="switch"><input id="enabled" type="checkbox" aria-label="Enable shopping protection"><span class="switch-track"></span></label></section>
+    <form id="threshold-form"><label class="field" for="threshold"><span>Remind me when a price reaches</span></label><div class="threshold-row"><div class="money-input"><span>£</span><input id="threshold" type="number" min="0.01" max="1000000000" step="0.01" required aria-label="Alert amount in pounds"></div><button class="btn" type="submit">Save</button></div><p class="hint">Based on the current full price in British pounds.</p></form>
+    <section class="page-state" aria-live="polite"><div class="state-label"><span id="dot" class="status-dot pending"></span>THIS PAGE</div><p id="page-status">Waiting to check</p></section>
+    <div class="actions"><button id="scan" class="btn primary">Scan this page <span aria-hidden="true">↻</span></button><button id="preview" class="btn">Preview the reminder ↗</button></div>
+    <p id="message" class="message" role="status"></p>
+  </main>
+  <footer><span class="small-mark" aria-hidden="true">⌁</span> Local AI. Your call.</footer>
+  <script type="module" src="popup.js"></script>
+</body></html>

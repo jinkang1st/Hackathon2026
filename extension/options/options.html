@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pause · Settings</title><link rel="stylesheet" href="../ui.css"><link rel="stylesheet" href="options.css"></head>
+<body>
+  <header><div class="brand"><span class="mark" aria-hidden="true">Ⅱ</span> PAUSE <span class="brand-sub">Shopping Guard</span></div><span class="edition">A LITTLE SPACE BEFORE YOU BUY.</span></header>
+  <main>
+    <aside><div class="eyebrow">MAKE ROOM FOR INTENTION</div><h1>Make room for<br>what matters.</h1><p class="lead">Set your own boundaries.<br>Let AI offer a gentle nudge when you need it.</p><div class="illustration" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pause-stone">Ⅱ</div><span class="orbit-label">breathe. think. choose.</span></div><p class="aside-note">You are always in control.<br>Pause never buys or pays on your behalf.</p></aside>
+    <section class="settings-panel"><div class="section-kicker"><span>01 / SHOPPING GUARD</span><span class="chip">Local only</span></div><h2>Your pause. Your rules.</h2><p class="section-description">Set it up once. Browse with a little more intention.</p>
+      <form id="settings-form">
+        <label class="field"><span>Alert amount · GBP</span><div class="money-input"><span>£</span><input id="threshold" type="number" min="0.01" max="1000000000" step="0.01" required></div><p class="hint">Show a prominent reminder when a current GBP price reaches this amount.</p></label>
+        <div class="divider"></div><div class="api-heading"><h3>Connect your local AI</h3><span>Optional · OpenAI-compatible</span></div>
+        <label class="field"><span>API URL</span><input id="base-url" type="url" spellcheck="false" placeholder="http://localhost:1234/v1" autocomplete="off"><p class="hint">Blank by default. Use localhost or 127.0.0.1. A full /chat/completions URL also works.</p></label>
+        <label class="field"><span>Model name</span><input id="model" type="text" placeholder="Model ID from your local server" autocomplete="off" spellcheck="false"></label>
+        <label class="field"><span>API Key <small>optional</small></span><input id="api-key" type="password" placeholder="Leave blank if your server needs no key" autocomplete="off" spellcheck="false"></label>
+        <div class="info"><span aria-hidden="true">↳</span><p>Trimmed page content goes only to your local endpoint. Input fields, passwords and editable areas are excluded. No page history is saved.</p></div>
+        <div class="form-actions"><button type="submit" class="btn primary" id="save">Save settings</button><button type="button" class="btn" id="test">Test connection</button></div><p class="message" id="message" role="status"></p>
+      </form>
+      <details><summary>How it works &amp; limitations <span>＋</span></summary><p>When protection is on, regular HTTP / HTTPS pages are analysed. Dynamic content and navigation trigger fresh scans, spaced at least 5 seconds apart. Unchanged content is skipped and background tabs pause scanning.</p><p>Without an API, or when the AI is unavailable, a local price check looks for amounts such as £1,299 or GBP 1299. It skips some obvious old prices and instalments but cannot reliably identify what an amount refers to. AI is retried after 30 seconds on visible pages.</p><p>Only GBP is compared; no exchange rates are guessed. Each request includes up to 24,000 characters of simplified HTML and 16,000 of text. Prices in images, frames, shadow roots or truncated content may be missed. AI and local checks can make mistakes; check the actual shop price.</p><p>The same product and price trigger one reminder per page visit. Refreshing, changing rules or scanning manually resets reminders. This is a voluntary reminder, not a payment block or enforced cooling-off period.</p></details>
+    </section>
+  </main><footer>PAUSE · A little space before you buy.</footer><script type="module" src="options.js"></script>
+</body></html>

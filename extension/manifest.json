@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Pause · Shopping Guard",
+  "description": "A little space before you buy. Local AI spots products that reach your personal spending threshold.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*", "https://localhost/*", "https://127.0.0.1/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "Pause · Shopping Guard", "default_popup": "popup/popup.html" },
+  "options_page": "options/options.html",
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["shared.js", "extractor.js", "overlay.js", "content.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }]
+}
