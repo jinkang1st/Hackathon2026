@@ -1,4 +1,7 @@
 # Hackathon2026
+
+Another Proejct：[luma-follow-light-ice.creamllama16.chatgpt.site](https://luma-follow-light-ice.creamllama16.chatgpt.site)
+
 # AI Firewall
 
 **Shopping Guard prototype:** [Install and test the Chrome extension](extension/README.md). All extension screens are in English. API configuration starts blank; local GBP price detection works immediately.
@@ -62,7 +65,7 @@ cp .env.example .env
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Interactive documentation: <http://127.0.0.1:8000/docs>; health check: <http://127.0.0.1:8000/health>.
+Interactive documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs); health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health).
 `.env` is excluded from version control. `NEBIUS_API_KEY` stays on the backend.
 If you expose the service to other devices, set a separate `FIREWALL_API_TOKEN` and send
 `Authorization: Bearer <FIREWALL_API_TOKEN>` with requests. Explicitly configure allowed browser origins with `FIREWALL_CORS_ORIGINS`.
