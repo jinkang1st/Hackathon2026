@@ -210,3 +210,185 @@ result, completion = await service.generate_structured(messages, PydanticSchema)
 - Verification: 49 tests passed with warnings treated as errors; Ruff lint/format and
   `git diff --check` passed. Coverage includes English language instructions and display text
   while preserving original non-English evidence values.
+
+## 2026-10-17 · macOS message reminders
+
+Implemented a native Swift menu bar app in `desktop/` and a dedicated backend message
+assessment service. The flow is keyboard activity → focused draft → local keyword
+screening → AI context assessment → optional reminder panel. All generated display text
+and prompts are English; source drafts and evidence retain their language.
+
+### Backend interfaces
+
+`GET /api/v1/messages/terms` returns the configured local-screening dictionary:
+
+```json
+{
+  "terms": [
+    {"term": "idiot", "match_mode": "word"},
+    {"term": "蠢货", "match_mode": "substring"}
+  ]
+}
+```
+
+The example is abbreviated. The source of truth is
+`backend/app/data/sensitive_terms.json`; restart the backend and restart protection
+after editing it. Terms use Unicode NFKC normalization and lowercase matching.
+Word mode matches whole words; substring mode supports phrases without word separators.
+The desktop fetches this configuration before starting, so it does not send unmatched
+drafts to the backend. The backend repeats screening before any model call.
+
+`POST /api/v1/messages/assess` accepts:
+
+```json
+{
+  "enabled": true,
+  "content": "You are an idiot. Fix the report.",
+  "application": "com.apple.TextEdit",
+  "recipient": "Project teammate",
+  "public": false,
+  "personal_principles": ["Disagree without personal attacks."]
+}
+```
+
+Only `content` is required. `enabled` defaults to false; `application` and `recipient`
+default to null, `public` to false, and `personal_principles` to an empty array.
+`content` is a non-empty draft/context fragment up to 4,000 Unicode code points.
+`application` is limited to 200 characters, `recipient` to 500, and principles to
+10 strings of at most 500 characters each. Unknown fields are rejected with HTTP 400.
+
+The desktop currently sends only `enabled=true`, `content`, and `application`.
+It does not infer a recipient, public/private status, or conversation history from
+the application name. Those fields can be supplied by later application-specific integrations.
+
+Successful assessment response example:
+
+```json
+{
+  "status": "assessed",
+  "should_remind": true,
+  "reason": "The personal insult may escalate the conversation.",
+  "matched_terms": ["idiot"],
+  "suggested_revision": "Please fix the report.",
+  "model": "openai/gpt-oss-120b",
+  "usage": {"prompt_tokens": 200, "completion_tokens": 50, "total_tokens": 250}
+}
+```
+
+- `status` is `disabled`, `no_match`, or `assessed`.
+- Disabled and unmatched requests return `should_remind=false`, an English explanation,
+  null model/usage/revision, and no model call. They work without a Nebius key.
+- A keyword match is only a trigger. The model may return `should_remind=false`, for
+  example for a quotation or educational use. Revisions are only returned when a reminder
+  is recommended. They are optional and must not be applied without a user action.
+- Internal interface: `MessageService(ModelService).assess(MessageAssessmentRequest)`
+  returns `MessageAssessmentResponse`. Structured inference uses the existing
+  `ModelService.generate_structured(...)` and standard OpenAI-compatible completions.
+- Both new routes use the existing optional `FIREWALL_API_TOKEN` Bearer authentication.
+  Model failures use the existing sanitized OpenAI-style errors and are never converted
+  to a safe assessment. No raw drafts are included in error logs/responses.
+- `enabled` represents opt-in from the trusted desktop client. It is not a substitute
+  for user authentication or persisted policy in a future multi-user deployment.
+
+### Desktop implementation and boundaries
+
+| Component | Responsibility |
+| --- | --- |
+| `desktop/Sources/MessageGuard/KeyboardMonitor.swift` | Listen-only CGEvent tap; key-down events signal activity without decoding characters |
+| `FocusedInput.swift` | Allowed foreground app, editable AX text control, secure-field exclusion, caret-centered bounded context |
+| `AppDelegate.swift` | Paused startup, app-list configuration, explicit enable flow, permissions, debounce, cancellation, throttling, stale checks |
+| `ReminderPanel.swift` | Nonactivating English panel, keep editing, explicit copy, pause |
+| `desktop/Sources/MessageGuardCore/` | Keyword matcher, capture policy, revision gate, bounded hash cache, API DTOs and ephemeral HTTP client |
+| `desktop/scripts/build-app.sh` | Builds and ad-hoc signs a local `MessageGuard.app` |
+
+The desktop requires macOS 13+ and Xcode Command Line Tools. No third-party desktop
+dependencies are needed. It starts paused with no default allowed apps; supply repeatable
+`--app` flags or use **Configure allowed apps…** in the shield menu. App-list changes
+are in-memory for the current session. User enablement requires Accessibility and Input
+Monitoring permissions; the app only opens the relevant settings page on a user action.
+
+The app waits for 600 ms of keyboard inactivity and reads at most 4,000 UTF-16 units
+around the caret in the focused draft. Read-only, standard secure, unsupported, or
+inaccessible controls are skipped. Custom controls depend on their AX metadata.
+This reads current text rather than reconstructing keystrokes, supporting text edits
+and paste when a keyboard event triggers a check. Mouse-only changes are not independently watched.
+
+At least three seconds separate inference starts. SHA-256 draft/field hashes are
+deduplicated for 120 seconds with a 128-entry memory limit. Actual draft text is not
+logged, persisted, or retained in the deduplication cache. HTTP uses an ephemeral session,
+no cookies or response cache, rejects redirects, and permits plain HTTP only on loopback.
+
+Typing, switching apps, changing fields/content, or pausing cancels or invalidates old work.
+The focused field and content are checked again immediately before showing a result.
+Pause removes the event tap, cancels tasks, closes the panel, and clears the hash cache.
+Already-received server/provider requests can still complete after client cancellation.
+Backend failures show **Check** in the menu bar and back off for 15 seconds.
+
+This implementation is a typing-time reminder, not a send interceptor. It cannot guarantee
+that AI responds before an immediate Enter/Send action. It does not synthesize input,
+change drafts, save messages, or send anything. **Copy suggestion** only writes to the
+clipboard after the user clicks it. Application-specific send hooks remain separate work.
+
+`--preview` shows clearly labeled sample content while paused, without monitoring or network calls.
+Run and permission instructions are in `desktop/README.md`.
+
+### Verification
+
+- Backend: 70 tests pass with warnings treated as errors, including 21 new message tests.
+- Desktop: native executable compiles and 9 Swift tests pass, covering capture policy,
+  Unicode/word boundaries, literal keyword escaping, stale results, pause, bounded TTL
+  deduplication, URL policy, and Unicode request encoding.
+- Python Ruff lint/format checks pass. The local app bundle passes ad-hoc code-sign verification.
+- Live keyboard capture, actual target-app AX behavior, and real Nebius inference were not
+  exercised: the environment has no configured model key or granted capture permissions.
+- The initial LaunchServices preview launch failed in the sandbox. Launching the local
+  executable's paused `--preview` outside that sandbox succeeded; desktop inspection
+  confirmed the English reminder, suggested wording, three action buttons, and unchanged-message
+  note render without clipping. Preview did not enable keyboard monitoring or network calls.
+
+## 2026-10-17 · Live Nebius and macOS validation
+
+Applied a user-supplied temporary test credential only to the ignored `backend/.env`,
+with mode 0600. No credential value is included in source, test reports, or this log.
+No OS permissions were changed; the native process already had Accessibility and
+Input Monitoring access outside the execution sandbox.
+
+Started an isolated backend on `127.0.0.1:18765`, with request access logging disabled,
+and used the actual Nebius API with `openai/gpt-oss-120b`.
+
+| Live check | Observed result | Duration |
+| --- | --- | --- |
+| Nebius model listing | HTTP 200; configured model available | — |
+| OpenAI-compatible chat | HTTP 200, `finish_reason=stop`, expected English reply | 0.43 s |
+| Ordinary draft | `no_match`, no model call | <0.01 s |
+| Disabled protection | `disabled`, no model call | <0.01 s |
+| English direct insult | `assessed`, reminder and English suggested revision | 1.66 s |
+| Educational quotation | `assessed`, no reminder, no revision | 1.57 s |
+| Chinese direct insult | `assessed`, reminder and English suggested revision | 1.82 s |
+
+The six HTTP behavior checks passed. Timings reflect this small test run, not a latency
+guarantee or a broader model-quality evaluation. All drafts were synthetic test examples.
+The reproducible runner is `backend/scripts/live_message_smoke.py`; it uses server-side
+configuration and never embeds or prints the Nebius credential.
+
+Desktop validation used a newly created TextEdit test document and an explicit
+`com.apple.TextEdit` allowlist. The normal enable-confirmation flow and real keyword
+configuration were used, not `--preview`. The automated tool's directed input did not
+exercise the global listener. After the user physically entered a space in that test
+document, the native process recorded these content-free diagnostic stages:
+
+```text
+assessment_requested
+reminder_received
+reminder_displayed
+```
+
+This verifies a physical keyboard event → focused TextEdit context → local keyword
+match → actual backend/Nebius inference → native reminder presentation. Switching
+away from the target app invalidates and closes the reminder by design. Other host
+applications and custom secure controls have not been validated by this test.
+
+Added `--check-permissions` (read-only), `--start` (opens normal confirmation), and
+`--diagnostics` (fixed stage labels only) to support future testing without logging
+drafts, key characters, window titles, or credentials. The temporary desktop monitor
+and isolated backend were stopped after the test; no background listener was left running.

@@ -123,3 +123,27 @@ uv run ruff format --check .
 ```
 
 测试使用模拟 Nebius 响应，不消耗真实推理额度。
+
+## macOS 消息提醒模块
+
+新增原生 Swift 菜单栏应用，默认暂停，仅检查显式指定应用中的输入框。
+流程为：键盘事件触发 → 本地敏感词初筛 → 有限上下文交给 AI → 必要时弹出英语提醒。
+
+先启动后端，然后在另一个终端执行：
+
+```bash
+cd desktop
+swift run MessageGuard --app com.apple.TextEdit
+```
+
+从盾牌菜单选择 **Start protection…**，按提示授予 macOS Accessibility 和 Input Monitoring
+权限后开启。可随时暂停。该版本在输入过程中提醒，不拦截发送。
+
+详细安装、预览、权限和支持范围见 [desktop/README.md](desktop/README.md)。
+新增接口为 `GET /api/v1/messages/terms` 和 `POST /api/v1/messages/assess`。
+
+已配置密钥并启动后端后，可用合成文本进行真实 API 联调（会消耗推理额度）：
+
+```bash
+backend/.venv/bin/python backend/scripts/live_message_smoke.py --base-url http://127.0.0.1:8000
+```

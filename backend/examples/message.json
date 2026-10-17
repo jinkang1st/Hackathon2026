@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "content": "You are an idiot. Fix the report.",
+  "application": "com.apple.TextEdit",
+  "recipient": "Project teammate",
+  "public": false,
+  "personal_principles": ["Disagree respectfully without personal attacks."]
+}

@@ -14,9 +14,11 @@ from openai.types.chat import ChatCompletion
 from app.config import Settings
 from app.errors import ModelServiceError
 from app.firewall_models import AssessmentRequest, AssessmentResponse
+from app.message_models import MessageAssessmentRequest, MessageAssessmentResponse
 from app.models import ChatRequest
 from app.providers.nebius import NebiusProvider
 from app.services.firewall import FirewallService
+from app.services.messages import TERMS, MessageService
 from app.services.model import ModelService
 
 bearer = HTTPBearer(auto_error=False)
@@ -122,6 +124,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         service: Annotated[ModelService, Depends(get_model_service)],
     ):
         return await service.chat.completions.create(**body.model_dump(exclude_none=True))
+
+    @app.post(
+        "/api/v1/messages/assess",
+        response_model=MessageAssessmentResponse,
+        dependencies=[Depends(authorize)],
+    )
+    async def assess_message(
+        body: MessageAssessmentRequest,
+        service: Annotated[ModelService, Depends(get_model_service)],
+    ):
+        return await MessageService(service).assess(body)
+
+    @app.get("/api/v1/messages/terms", dependencies=[Depends(authorize)])
+    async def message_terms():
+        return {"terms": [term.model_dump() for term in TERMS]}
 
     @app.post(
         "/api/v1/firewall/assess",

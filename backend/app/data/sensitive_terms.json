@@ -1,0 +1,18 @@
+[
+  {"term": "fuck", "match_mode": "word"},
+  {"term": "fucking", "match_mode": "word"},
+  {"term": "shit", "match_mode": "word"},
+  {"term": "bullshit", "match_mode": "word"},
+  {"term": "asshole", "match_mode": "word"},
+  {"term": "bitch", "match_mode": "word"},
+  {"term": "bastard", "match_mode": "word"},
+  {"term": "idiot", "match_mode": "word"},
+  {"term": "moron", "match_mode": "word"},
+  {"term": "stupid", "match_mode": "word"},
+  {"term": "shut up", "match_mode": "word"},
+  {"term": "傻逼", "match_mode": "substring"},
+  {"term": "蠢货", "match_mode": "substring"},
+  {"term": "操你", "match_mode": "substring"},
+  {"term": "去死", "match_mode": "substring"},
+  {"term": "滚蛋", "match_mode": "substring"}
+]
