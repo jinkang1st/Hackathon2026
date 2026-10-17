@@ -1,73 +1,73 @@
 # Hackathon2026
-# AI 防火墙
+# AI Firewall
 
 **Shopping Guard prototype:** [Install and test the Chrome extension](extension/README.md). All extension screens are in English. API configuration starts blank; local GBP price detection works immediately.
 
-在冲动变成行动之前，替你按一下暂停键。
+A moment to pause before impulse turns into action.
 
-一个探索中的 AI 插件：结合当前操作和用户设定的个人规则，在可能让你后悔的操作发生前，提醒、暂停，并提供替代选择。
+An experimental AI extension that combines the action you are about to take with your personal rules to offer a reminder, pause the action, and suggest alternatives before you do something you might regret.
 
-## 计划功能
+## Planned features
 
-### 1. 购物拦截
+### 1. Shopping guard
 
-在付款前，根据用户设定的金额上限、消费预算等规则触发提醒。
+Trigger reminders before payment based on user-defined spending limits, budgets, and other rules.
 
-- 提示大额支出及其对预算的影响
-- 支持先收藏、开启冷静期或确认购买
+- Highlight large purchases and their impact on your budget
+- Offer options to save for later, start a cooling-off period, or confirm the purchase
 
-> “这笔消费超过了你设置的提醒金额，要先收藏，明天再决定吗？”
+> “This purchase exceeds your alert amount. Would you like to save it and decide tomorrow?”
 
-### 2. 发消息拦截
+### 2. Message guard
 
-在消息发送前，识别可能激化冲突的表达，提醒用户重新考虑。
+Identify language that could escalate a conflict and prompt you to reconsider before sending a message.
 
-- 提示攻击性措辞及可能引起的误解
-- 提供保留原意、表达更清楚的改写建议
-- 支持暂存草稿、修改或确认发送
+- Flag aggressive wording and potential misunderstandings
+- Suggest clearer wording that preserves your intended meaning
+- Offer options to save a draft, edit the message, or confirm sending
 
-> “这条消息可能让争论升级，要试试一版态度坚定、但不攻击对方的表达吗？”
+> “This message could escalate the argument. Would you like to try a version that is firm without attacking the other person?”
 
-### 3. 更多场景（待定）
+### 3. More scenarios (to be explored)
 
-探索误删重要文件、公开发布敏感信息等操作的事前保护。
+Explore safeguards before actions such as accidentally deleting important files or publicly sharing sensitive information.
 
-## 基本原则
+## Core principles
 
-- **用户设定边界：** 自主选择保护场景和拦截规则。
-- **解释每次拦截：** 说明触发原因和可能的后果。
-- **保留决定权：** 提供提醒、确认和自愿开启的冷静期。
-- **最小必要授权：** 仅访问所选功能需要的信息。
+- **You set the boundaries:** Choose which scenarios to protect and which rules to apply.
+- **Explain every intervention:** Show what triggered it and what the consequences could be.
+- **Keep you in control:** Provide reminders, confirmations, and optional cooling-off periods.
+- **Use only the permissions needed:** Access only the information required by the features you choose.
 
-## Hackathon 目标
+## Hackathon goals
 
-先完成购物和发消息两个演示场景，跑通：
+Start with shopping and messaging demos that demonstrate the complete workflow:
 
-**识别风险 → 暂停操作 → 解释原因 → 用户选择 → 执行操作**
+**Identify the risk → Pause the action → Explain the reason → Let the user choose → Execute the action**
 
-## 后端模型服务层
+## Backend model service
 
-当前已实现后端模型服务层：使用 OpenAI Python SDK 调用 Nebius Token Factory，
-提供 OpenAI Chat Completions 兼容接口及结构化风险评估接口。
+The backend model service is implemented. It uses the OpenAI Python SDK to call Nebius Token Factory
+and provides an OpenAI Chat Completions-compatible endpoint and a structured risk assessment endpoint.
 
-## 本地启动
+## Run locally
 
-需要 Python 3.11+ 和 [uv](https://docs.astral.sh/uv/)。
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 cd backend
 uv sync --frozen
 cp .env.example .env
-# 编辑 .env，填写 NEBIUS_API_KEY 和账户可用的 NEBIUS_MODEL
+# Edit .env to set NEBIUS_API_KEY and a NEBIUS_MODEL available to your account
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-交互文档：<http://127.0.0.1:8000/docs>；健康检查：<http://127.0.0.1:8000/health>。
-`.env` 已加入忽略规则。`NEBIUS_API_KEY` 仅保留在后端。
-如向其他设备开放服务，设置独立的 `FIREWALL_API_TOKEN`，请求使用
-`Authorization: Bearer <FIREWALL_API_TOKEN>`。浏览器来源通过 `FIREWALL_CORS_ORIGINS` 显式配置。
+Interactive documentation: <http://127.0.0.1:8000/docs>; health check: <http://127.0.0.1:8000/health>.
+`.env` is excluded from version control. `NEBIUS_API_KEY` stays on the backend.
+If you expose the service to other devices, set a separate `FIREWALL_API_TOKEN` and send
+`Authorization: Bearer <FIREWALL_API_TOKEN>` with requests. Explicitly configure allowed browser origins with `FIREWALL_CORS_ORIGINS`.
 
-## OpenAI SDK 兼容调用
+## OpenAI SDK-compatible usage
 
 ```python
 import asyncio
@@ -90,13 +90,13 @@ async def main():
 asyncio.run(main())
 ```
 
-兼容范围为非流式文本 Chat Completions（含文本工具调用与 `response_format`）；
-`stream=true`、多模态、`n>1`、`store=true` 等未实现能力会明确返回 400。
-内部模块同样使用 `service.chat.completions.create(...) -> ChatCompletion`。
+Compatibility covers non-streaming text Chat Completions, including text-based tool calls and `response_format`.
+Unsupported features such as `stream=true`, multimodal input, `n>1`, and `store=true` explicitly return HTTP 400.
+Internal modules use the same `service.chat.completions.create(...) -> ChatCompletion` interface.
 
-## 风险评估
+## Risk assessment
 
-在 `backend/` 下执行（若设置后端令牌，增加上述 Authorization 请求头）：
+Run from `backend/` (add the Authorization header shown above if a backend token is configured):
 
 ```bash
 curl http://127.0.0.1:8000/api/v1/firewall/assess \
@@ -108,12 +108,12 @@ curl http://127.0.0.1:8000/api/v1/firewall/assess \
   --data-binary @examples/purchase.json
 ```
 
-接口返回介入等级、原因、原始事实依据和可选操作。所有生成的显示文案使用英语；
-原始证据保留输入语言。
-此层只做评估；实际暂停、执行、计时和再次确认由后续插件及执行层实现。
-接口契约与接入约定见 [development_log.md](development_log.md)。
+The endpoint returns the intervention level, reasons, supporting facts from the input, and available actions.
+All generated user-facing text is in English; original evidence retains the input language.
+This layer only performs assessment. Pausing, execution, timing, and reconfirmation are handled by the extension and execution layers built on top of it.
+See [development_log.md](development_log.md) for API contracts and integration conventions.
 
-## 验证
+## Validation
 
 ```bash
 cd backend
@@ -122,27 +122,27 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-测试使用模拟 Nebius 响应，不消耗真实推理额度。
+Tests use mocked Nebius responses and do not consume real inference credits.
 
-## macOS 消息提醒模块
+## macOS message reminders
 
-新增原生 Swift 菜单栏应用，默认暂停，仅检查显式指定应用中的输入框。
-流程为：键盘事件触发 → 本地敏感词初筛 → 有限上下文交给 AI → 必要时弹出英语提醒。
+A native Swift menu bar app starts paused and only checks input fields in explicitly allowed applications.
+The workflow is: keyboard activity → local keyword screening → limited context sent for AI assessment → an English reminder when needed.
 
-先启动后端，然后在另一个终端执行：
+Start the backend first, then run the following in another terminal:
 
 ```bash
 cd desktop
 swift run MessageGuard --app com.apple.TextEdit
 ```
 
-从盾牌菜单选择 **Start protection…**，按提示授予 macOS Accessibility 和 Input Monitoring
-权限后开启。可随时暂停。该版本在输入过程中提醒，不拦截发送。
+Choose **Start protection…** from the shield menu and follow the prompts to grant macOS Accessibility
+and Input Monitoring permissions. Protection can be paused at any time. This version provides reminders while you type; it does not intercept sending.
 
-详细安装、预览、权限和支持范围见 [desktop/README.md](desktop/README.md)。
-新增接口为 `GET /api/v1/messages/terms` 和 `POST /api/v1/messages/assess`。
+See [desktop/README.md](desktop/README.md) for installation, preview, permissions, and supported scenarios.
+The new endpoints are `GET /api/v1/messages/terms` and `POST /api/v1/messages/assess`.
 
-已配置密钥并启动后端后，可用合成文本进行真实 API 联调（会消耗推理额度）：
+After configuring the key and starting the backend, use synthetic text for a live API integration check (this consumes inference credits):
 
 ```bash
 backend/.venv/bin/python backend/scripts/live_message_smoke.py --base-url http://127.0.0.1:8000
