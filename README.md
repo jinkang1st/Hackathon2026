@@ -42,3 +42,82 @@
 先完成购物和发消息两个演示场景，跑通：
 
 **识别风险 → 暂停操作 → 解释原因 → 用户选择 → 执行操作**
+
+## 后端模型服务层
+
+当前已实现后端模型服务层：使用 OpenAI Python SDK 调用 Nebius Token Factory，
+提供 OpenAI Chat Completions 兼容接口及结构化风险评估接口。
+
+## 本地启动
+
+需要 Python 3.11+ 和 [uv](https://docs.astral.sh/uv/)。
+
+```bash
+cd backend
+uv sync --frozen
+cp .env.example .env
+# 编辑 .env，填写 NEBIUS_API_KEY 和账户可用的 NEBIUS_MODEL
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+交互文档：<http://127.0.0.1:8000/docs>；健康检查：<http://127.0.0.1:8000/health>。
+`.env` 已加入忽略规则。`NEBIUS_API_KEY` 仅保留在后端。
+如向其他设备开放服务，设置独立的 `FIREWALL_API_TOKEN`，请求使用
+`Authorization: Bearer <FIREWALL_API_TOKEN>`。浏览器来源通过 `FIREWALL_CORS_ORIGINS` 显式配置。
+
+## OpenAI SDK 兼容调用
+
+```python
+import asyncio
+import os
+from openai import AsyncOpenAI
+
+async def main():
+    async with AsyncOpenAI(
+        base_url="http://127.0.0.1:8000/v1/",
+        api_key=os.getenv("FIREWALL_API_TOKEN") or "local-dev",
+        max_retries=0,
+    ) as client:
+        response = await client.chat.completions.create(
+            model=os.getenv("NEBIUS_MODEL", "openai/gpt-oss-120b"),
+            messages=[{"role": "user", "content": "Explain AI Firewall in one sentence."}],
+            max_tokens=2048,
+        )
+        print(response.choices[0].message.content)
+
+asyncio.run(main())
+```
+
+兼容范围为非流式文本 Chat Completions（含文本工具调用与 `response_format`）；
+`stream=true`、多模态、`n>1`、`store=true` 等未实现能力会明确返回 400。
+内部模块同样使用 `service.chat.completions.create(...) -> ChatCompletion`。
+
+## 风险评估
+
+在 `backend/` 下执行（若设置后端令牌，增加上述 Authorization 请求头）：
+
+```bash
+curl http://127.0.0.1:8000/api/v1/firewall/assess \
+  -H 'Content-Type: application/json' \
+  --data-binary @examples/delete.json
+
+curl http://127.0.0.1:8000/api/v1/firewall/assess \
+  -H 'Content-Type: application/json' \
+  --data-binary @examples/purchase.json
+```
+
+接口返回介入等级、原因、原始事实依据和可选操作。所有生成的显示文案使用英语；
+原始证据保留输入语言。
+此层只做评估；实际暂停、执行、计时和再次确认由后续插件及执行层实现。
+接口契约与接入约定见 [development_log.md](development_log.md)。
+
+## 验证
+
+```bash
+cd backend
+uv run pytest -q
+uv run ruff check .
+uv run ruff format --check .
+```
+
+测试使用模拟 Nebius 响应，不消耗真实推理额度。

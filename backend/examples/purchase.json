@@ -1,0 +1,21 @@
+{
+  "action": {
+    "type": "purchase",
+    "item": "Handbag",
+    "amount": "28000.00",
+    "currency": "CNY",
+    "remaining_budget": "8000.00"
+  },
+  "preferences": {
+    "protected_actions": ["purchase"],
+    "spending_reminder": {"threshold": "5000.00", "currency": "CNY"},
+    "purchase_cooldown": {
+      "enabled": true,
+      "threshold": "5000.00",
+      "currency": "CNY",
+      "minutes": 30
+    },
+    "savings_goals": ["Travel savings"],
+    "expression_style": "gentle"
+  }
+}

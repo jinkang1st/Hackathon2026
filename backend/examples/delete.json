@@ -1,0 +1,15 @@
+{
+  "action": {
+    "type": "delete",
+    "target": "Files to clean up",
+    "file_count": 3842,
+    "important_items": ["Dissertation", "Work documents"],
+    "permanent": true,
+    "supports_trash": true
+  },
+  "preferences": {
+    "protected_actions": ["delete"],
+    "important_paths": ["Dissertation", "Work documents"],
+    "expression_style": "gentle"
+  }
+}
